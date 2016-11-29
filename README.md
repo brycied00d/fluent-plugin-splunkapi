@@ -46,6 +46,15 @@ Or install it yourself as:
 
     $ gem install fluent-plugin-splunk-http-eventcollector
 
+If installation fails with 
+
+    ERROR:  Error installing fluent-plugin-splunk-http-eventcollector:
+    serverengine requires Ruby version >= 2.1.0.
+
+try with td-agent
+
+    $ td-agent-gem install fluent-plugin-splunk-http-eventcollector
+
 ## Configuration
 
 Put the following lines to your fluent.conf:
