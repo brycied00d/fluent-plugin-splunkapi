@@ -39,6 +39,7 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
   # Event parameters
   config_param :host, :string, :default => nil
   config_param :index, :string, :default => 'main'
+  config_param :sourcetype, :string, :default => 'fluent'
   
   config_param :post_retry_max, :integer, :default => 5
   config_param :post_retry_interval, :integer, :default => 5
@@ -62,6 +63,7 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
     super
     $log.debug "splunk-http-eventcollector(configure) called"
     begin
+      @protocol = @verify ? "https" : "http"
       @splunk_uri = URI "https://#{@server}/services/collector"
     rescue
       raise ConfigError, "Unable to parse the server into a URI."
@@ -102,6 +104,7 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
         "event" => record["message"],
         "time" => time.to_i,
         "source" => tag.to_s,
+        "sourcetype" => @sourcetype.to_s,
         "host" => @host.to_s,
         "index" => @index.to_s
         ]
