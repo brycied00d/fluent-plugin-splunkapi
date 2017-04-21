@@ -1,0 +1,36 @@
+# Sure, these are nice but disable them for now.
+Metrics/ClassLength:
+  Enabled: false
+
+Metrics/MethodLength:
+  Enabled: false
+
+Metrics/AbcSize:
+  Enabled: false
+
+Metrics/PerceivedComplexity:
+  Enabled: false
+
+Metrics/CyclomaticComplexity:
+  Enabled: false
+
+Style/FileName:
+  Enabled: false
+
+Style/GuardClause:
+  Enabled: false
+
+Style/MethodName:
+  Enabled: false
+
+Style/ClassAndModuleChildren:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
+Style/MethodMissing:
+  Enabled: false
+
+Style/GlobalVars:
+  Enabled: false
