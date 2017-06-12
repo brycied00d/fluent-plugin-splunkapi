@@ -28,7 +28,7 @@ class SplunkHTTPEventcollectorOutputTest < Test::Unit::TestCase
 
     d = create_driver
 
-    time = Time.parse("2010-01-02 13:14:15 UTC").to_i
+    time = Time.parse("2010-01-02 13:14:15 UTC").to_f
     d.emit({ "message" => "a message"}, time)
 
     d.run
@@ -52,7 +52,7 @@ class SplunkHTTPEventcollectorOutputTest < Test::Unit::TestCase
       sourcetype ${tag_parts[0]}
     ])
 
-    time = Time.parse("2010-01-02 13:14:15 UTC").to_i
+    time = Time.parse("2010-01-02 13:14:15 UTC").to_f
     d.emit({"message" => "a message", "source" => "source-from-record"}, time)
 
     d.run
@@ -70,7 +70,7 @@ class SplunkHTTPEventcollectorOutputTest < Test::Unit::TestCase
 
     d = create_driver
 
-    time = Time.parse("2010-01-02 13:14:15 UTC").to_i
+    time = Time.parse("2010-01-02 13:14:15 UTC").to_f
     d.emit({ "message" => "1" }, time)
     d.run
 
@@ -100,7 +100,7 @@ class SplunkHTTPEventcollectorOutputTest < Test::Unit::TestCase
       post_retry_interval 0.1
     ])
 
-    time = Time.parse("2010-01-02 13:14:15 UTC").to_i
+    time = Time.parse("2010-01-02 13:14:15 UTC").to_f
     d.emit({ "message" => "1" }, time)
     d.run
 
@@ -120,7 +120,7 @@ class SplunkHTTPEventcollectorOutputTest < Test::Unit::TestCase
       batch_size_limit 250
     ])
 
-    time = Time.parse("2010-01-02 13:14:15 UTC").to_i
+    time = Time.parse("2010-01-02 13:14:15 UTC").to_f
     d.emit({"message" => "a" }, time)
     d.emit({"message" => "b" }, time)
     d.emit({"message" => "c" }, time)
@@ -148,7 +148,7 @@ class SplunkHTTPEventcollectorOutputTest < Test::Unit::TestCase
       all_items true
     ])
 
-    time = Time.parse("2010-01-02 13:14:15 UTC").to_i
+    time = Time.parse("2010-01-02 13:14:15 UTC").to_f
     d.emit({ "some" => { "nested" => "ü†f-8".force_encoding("BINARY"), "with" => ['ü', '†', 'f-8'].map {|c| c.force_encoding("BINARY") } } }, time)
     d.run
 
@@ -167,7 +167,7 @@ class SplunkHTTPEventcollectorOutputTest < Test::Unit::TestCase
       all_items true
     ])
 
-    time = Time.parse("2010-01-02 13:14:15 UTC").to_i
+    time = Time.parse("2010-01-02 13:14:15 UTC").to_f
     d.emit({ "some" => { "nested" => "ü†f-8".force_encoding("BINARY"), "with" => ['ü', '†', 'f-8'].map {|c| c.force_encoding("BINARY") } } }, time)
     d.run
 

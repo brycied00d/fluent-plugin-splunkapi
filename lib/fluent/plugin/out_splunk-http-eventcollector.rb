@@ -158,7 +158,7 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
     placeholders = @placeholder_expander.prepare_placeholders(placeholder_values)
 
     splunk_object = Hash[
-        "time" => time.to_i,
+        "time" => time.to_f,
         "source" => if @source.nil? then tag.to_s else @placeholder_expander.expand(@source, placeholders) end,
         "sourcetype" => @placeholder_expander.expand(@sourcetype.to_s, placeholders),
         "host" => @placeholder_expander.expand(@host.to_s, placeholders),
