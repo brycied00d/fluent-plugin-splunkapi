@@ -30,6 +30,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # http://dev.splunk.com/view/event-collector/SP-CAAAE6M
 # http://docs.splunk.com/Documentation/Splunk/latest/RESTREF/RESTinput#services.2Fcollector
 
+require 'date'
+
 module Fluent
 class SplunkHTTPEventcollectorOutput < BufferedOutput
 
@@ -47,10 +49,13 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
   config_param :index, :string, :default => 'main'
   config_param :all_items, :bool, :default => false
 
+  config_param :iso8601_time, :string, :default => nil
   config_param :sourcetype, :string, :default => 'fluentd'
   config_param :source, :string, :default => nil
   config_param :post_retry_max, :integer, :default => 5
   config_param :post_retry_interval, :integer, :default => 5
+  config_param :nested_json, :bool, :default => false
+  config_param :fields, :hash, :default => {}
 
   # TODO Find better upper limits
   config_param :batch_size_limit, :integer, :default => 262144 # 65535
@@ -115,6 +120,12 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
 
     @placeholder_expander = Fluent::SplunkHTTPEventcollectorOutput.placeholder_expander(log)
     @hostname = Socket.gethostname
+
+    unless @fields.empty?
+      @fields = inject_env_vars_into_fields
+      @fields = inject_files_into_fields
+    end
+
     # TODO Add other robust input/syntax checks.
   end  # configure
 
@@ -158,7 +169,7 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
     placeholders = @placeholder_expander.prepare_placeholders(placeholder_values)
 
     splunk_object = Hash[
-        "time" => time.to_i,
+        "time" => handle_get_time(time, placeholders),
         "source" => if @source.nil? then tag.to_s else @placeholder_expander.expand(@source, placeholders) end,
         "sourcetype" => @placeholder_expander.expand(@sourcetype.to_s, placeholders),
         "host" => @placeholder_expander.expand(@host.to_s, placeholders),
@@ -171,10 +182,18 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
       splunk_object["event"] = convert_to_utf8(record["message"])
     end
 
+    unless @fields.empty?
+      splunk_object["fields"] = @fields
+    end
+
     json_event = splunk_object.to_json
     #log.debug "Generated JSON(#{json_event.class.to_s}): #{json_event.to_s}"
     #log.debug "format: returning: #{[tag, record].to_json.to_s}"
-    json_event
+    if @nested_json
+      json_event + "\n"
+    else
+      json_event
+    end
   end
 
   # By this point, fluentd has decided its buffer is full and it's time to flush
@@ -190,11 +209,15 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
   def write(chunk)
     log.trace "splunk-http-eventcollector(write) called"
 
-    # Break the concatenated string of JSON-formatted events into an Array
-    split_chunk = chunk.read.split("}{").each do |x|
-      # Reconstruct the opening{/closing} that #split() strips off.
-      x.prepend("{") unless x.start_with?("{")
-      x << "}" unless x.end_with?("}")
+    if @nested_json
+      split_chunk = chunk.read.split("\n")
+    else
+      # Break the concatenated string of JSON-formatted events into an Array
+      split_chunk = chunk.read.split("}{").each do |x|
+        # Reconstruct the opening{/closing} that #split() strips off.
+        x.prepend("{") unless x.start_with?("{")
+        x << "}" unless x.end_with?("}")
+      end
     end
     log.debug "Pushing #{numfmt(split_chunk.size)} events (" +
         "#{numfmt(chunk.read.bytesize)} bytes) to Splunk."
@@ -265,7 +288,7 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
         next
       elsif response.code.match(/^40/)
         # user error
-        log.error "#{@splunk_uri}: #{response.code} (#{response.message})\n#{response.body}"
+        log.error "#{@splunk_uri}: #{response.code} (#{response.message})\nReq: #{body}\nRes: #{response.body}"
         break
       elsif c < @post_retry_max
         # retry
@@ -320,5 +343,35 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
       end
     end
   end
+
+  # Environment variables are passed in with the following format:
+  # @{ENV['NAME_OF_ENV_VAR']}
+  def inject_env_vars_into_fields
+    @fields.each { | _, field_value|
+      match_data = field_value.to_s.match(/^@\{ENV\['(?<env_name>.+)'\]\}$/)
+      if match_data && match_data["env_name"]
+        field_value.replace(ENV[match_data["env_name"]])
+      end
+    }
+  end
+
+  def inject_files_into_fields
+    @fields.each { | _, field_value |
+      match_data = field_value.to_s.match(/^@\{FILE\['(?<file_path>.+)'\]\}$/)
+      if match_data && match_data["file_path"]
+        field_value.replace(IO.read(match_data["file_path"]))
+      end
+    }
+  end
+
+  def handle_get_time(emitted_at_timestamp, placeholders)
+    if @iso8601_time.nil?
+      emitted_at_timestamp.to_f
+    else
+      time = @placeholder_expander.expand(@iso8601_time, placeholders)
+      DateTime.iso8601(time).to_time.to_f
+    end
+  end
+
 end  # class SplunkHTTPEventcollectorOutput
 end  # module Fluent
