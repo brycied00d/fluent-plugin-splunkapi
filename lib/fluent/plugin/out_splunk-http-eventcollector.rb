@@ -41,6 +41,10 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
   config_param :verify, :bool, :default => true
   config_param :token, :string, :default => nil
 
+  config_param :proxy_host, :string, :default => nil
+  config_param :proxy_port, :integer, :default => nil
+  config_param :proxy_https, :bool, :default => true
+
   # Event parameters
   config_param :protocol, :string, :default => 'https'
   config_param :host, :string, :default => nil
@@ -123,7 +127,18 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
   def start
     super
     log.trace "splunk-http-eventcollector(start) called"
-    @http = Net::HTTP::Persistent.new 'fluent-plugin-splunk-http-eventcollector'
+
+    if @proxy_host then
+      if @proxy_https then
+        @proxy = URI::HTTPS.build({:host => @proxy_host, :port => @proxy_port})
+      else
+        @proxy = URI::HTTP.build({:host => @proxy_host, :port => @proxy_port})
+      end
+    else
+      @proxy = nil
+    end
+
+    @http = Net::HTTP::Persistent.new 'fluent-plugin-splunk-http-eventcollector', @proxy
     @http.verify_mode = OpenSSL::SSL::VERIFY_NONE unless @verify
     @http.override_headers['Content-Type'] = 'application/json'
     @http.override_headers['User-Agent'] = 'fluent-plugin-splunk-http-eventcollector/0.0.1'
