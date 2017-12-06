@@ -42,6 +42,7 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
   config_param :token, :string, :default => nil
 
   # Event parameters
+  config_param :time_key, :string, :default => 'time'
   config_param :protocol, :string, :default => 'https'
   config_param :host, :string, :default => nil
   config_param :index, :string, :default => 'main'
@@ -49,6 +50,7 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
 
   config_param :sourcetype, :string, :default => 'fluentd'
   config_param :source, :string, :default => nil
+  config_param :fields_key, :string, :default => nil
   config_param :post_retry_max, :integer, :default => 5
   config_param :post_retry_interval, :integer, :default => 5
 
@@ -108,7 +110,7 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
     super
     log.trace "splunk-http-eventcollector(configure) called"
     begin
-      @splunk_uri = URI "#{@protocol}://#{@server}/services/collector"
+      @splunk_uri = URI "#{@protocol}://#{@server}/services/collector/event"
     rescue
       raise ConfigError, "Unable to parse the server into a URI."
     end
@@ -158,9 +160,10 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
     placeholders = @placeholder_expander.prepare_placeholders(placeholder_values)
 
     splunk_object = Hash[
-        "time" => time.to_i,
+        "time" => if record.has_key?(@time_key) then record[@time_key] else time.to_i end,
         "source" => if @source.nil? then tag.to_s else @placeholder_expander.expand(@source, placeholders) end,
         "sourcetype" => @placeholder_expander.expand(@sourcetype.to_s, placeholders),
+        "fields" => if record.has_key?(@fields_key) then record[@fields_key] else Hash.new end,
         "host" => @placeholder_expander.expand(@host.to_s, placeholders),
         "index" =>  @placeholder_expander.expand(@index, placeholders)
       ]
@@ -168,12 +171,14 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
     if @all_items
       splunk_object["event"] = convert_to_utf8(record)
     else
+#      if ! record["message"] =~ /^(\s+|\"\"|)$/
       splunk_object["event"] = convert_to_utf8(record["message"])
+#      end
     end
 
     json_event = splunk_object.to_json
-    #log.debug "Generated JSON(#{json_event.class.to_s}): #{json_event.to_s}"
-    #log.debug "format: returning: #{[tag, record].to_json.to_s}"
+      #log.debug "Generated JSON(#{json_event.class.to_s}): #{json_event.to_s}"
+      #log.debug "format: returning: #{[tag, record].to_json.to_s}"
     json_event
   end
 

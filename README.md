@@ -78,6 +78,13 @@ Put the following lines to your fluent.conf:
       # Event Parameters
       #
 
+      # time_key: 'time' parameter passed to Splunk.
+      # default: time
+      #
+      # The "time" key/value will be replaced by an alternate record key you provide.  Useful if
+      # you are using an alternate key to store timestamps with more precision than seconds.
+      time_key time
+
       # host: 'host' parameter passed to Splunk
       host YOUR-HOSTNAME
 
@@ -113,13 +120,13 @@ Put the following lines to your fluent.conf:
       # default: json
       #
       # input = {"x":1, "y":"xyz", "message":"Hello, world!"}
-      # 
+      #
       # 'json' is JSON encoding:
       #   {"x":1,"y":"xyz","message":"Hello, world!"}
-      # 
+      #
       # 'kvp' is "key=value" pairs, which is automatically detected as fields by Splunk:
       #   x="1" y="xyz" message="Hello, world!"
-      # 
+      #
       # 'text' outputs the value of "message" as is, with "key=value" pairs for others:
       #   [x="1" y="xyz"] Hello, world!
       format json
@@ -134,14 +141,14 @@ Put the following lines to your fluent.conf:
       buffer_queue_limit 16
 
       # buffer_chunk_limit: The maxium size of POST data in a single API call.
-      # 
+      #
       # This value should be reasonablly small since the current implementation
       # of out_splunk-http-eventcollector converts a chunk to POST data on memory before API calls.
       # The default value should be good enough.
       buffer_chunk_limit 8m
 
       # flush_interval: The interval of API requests.
-      # 
+      #
       # Make sure that this value is sufficiently large to make successive API calls.
       # Note that a different 'source' creates a different API POST, each of which may
       # take two or more seconds.  If you include "{TAG}" in the source parameter and
