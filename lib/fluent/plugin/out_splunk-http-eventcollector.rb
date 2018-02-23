@@ -37,6 +37,8 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
 
   config_param :test_mode, :bool, :default => false
 
+  config_param :send_fields, :bool, :default => false
+
   config_param :server, :string, :default => 'localhost:8088'
   config_param :verify, :bool, :default => true
   config_param :token, :string, :default => nil
@@ -49,6 +51,7 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
 
   config_param :sourcetype, :string, :default => 'fluentd'
   config_param :source, :string, :default => nil
+  config_param :fields, :string, :default => nil
   config_param :post_retry_max, :integer, :default => 5
   config_param :post_retry_interval, :integer, :default => 5
 
@@ -157,13 +160,24 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
 
     placeholders = @placeholder_expander.prepare_placeholders(placeholder_values)
 
-    splunk_object = Hash[
-        "time" => time.to_i,
-        "source" => if @source.nil? then tag.to_s else @placeholder_expander.expand(@source, placeholders) end,
-        "sourcetype" => @placeholder_expander.expand(@sourcetype.to_s, placeholders),
-        "host" => @placeholder_expander.expand(@host.to_s, placeholders),
-        "index" =>  @placeholder_expander.expand(@index, placeholders)
-      ]
+    if @send_fields
+      splunk_object = Hash[
+          "time" => time.to_i,
+          "source" => if @source.nil? then tag.to_s else @placeholder_expander.expand(@source, placeholders) end,
+          "sourcetype" => @placeholder_expander.expand(@sourcetype.to_s, placeholders),
+          "host" => @placeholder_expander.expand(@host.to_s, placeholders),
+          "index" =>  @placeholder_expander.expand(@index, placeholders),
+          "fields" => JSON.parse(@placeholder_expander.expand(@fields.to_s, placeholders))
+        ]
+    else
+      splunk_object = Hash[
+          "time" => time.to_i,
+          "source" => if @source.nil? then tag.to_s else @placeholder_expander.expand(@source, placeholders) end,
+          "sourcetype" => @placeholder_expander.expand(@sourcetype.to_s, placeholders),
+          "host" => @placeholder_expander.expand(@host.to_s, placeholders),
+          "index" =>  @placeholder_expander.expand(@index, placeholders)
+        ]
+    end
     # TODO: parse different source types as expected: KVP, JSON, TEXT
     if @all_items
       splunk_object["event"] = convert_to_utf8(record)
