@@ -1,3 +1,9 @@
+# ARCHIVED
+
+This project has been archived and is superseded by Splunk's own fluentd plugin.
+https://github.com/splunk/fluent-plugin-splunk-hec
+
+
 # Fluent::Plugin::SplunkHTTPEventcollector, a plugin for [Fluentd](http://fluentd.org)
 
 Splunk output plugin for Fluent event collector.
