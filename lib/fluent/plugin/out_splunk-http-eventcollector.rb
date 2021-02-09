@@ -216,7 +216,7 @@ class SplunkHTTPEventcollectorOutput < BufferedOutput
     split_chunk = chunk.read.split("}{").each do |x|
       # Reconstruct the opening{/closing} that #split() strips off.
       x.prepend("{") unless x.start_with?("{")
-      x << "}" unless x.end_with?("}")
+      x << "}" unless x.end_with?("}}")
     end
     log.debug "Pushing #{numfmt(split_chunk.size)} events (" +
         "#{numfmt(chunk.read.bytesize)} bytes) to Splunk."
