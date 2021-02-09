@@ -28,16 +28,6 @@ This plugin interfaces with the Splunk HTTP Event Collector:
       check_index false
       source {TAG}
       sourcetype fluent
-
-      # TIMESTAMP: key1="value1" key2="value2" ...
-      time_format unixtime
-      format kvp
-
-      # Memory buffer with a short flush internal.
-      buffer_type memory
-      buffer_queue_limit 16
-      buffer_chunk_limit 8m
-      flush_interval 2s
     </match>
 
 ## Installation
@@ -111,31 +101,6 @@ Put the following lines to your fluent.conf:
       sourcetype fluent
 
       #
-      # Formatting Parameters
-      #
-
-      # time_format: the time format of each event
-      # value: none, unixtime, localtime, or any time format string
-      # default: localtime
-      time_format localtime
-
-      # format: the text format of each event
-      # value: json, kvp, or text
-      # default: json
-      #
-      # input = {"x":1, "y":"xyz", "message":"Hello, world!"}
-      # 
-      # 'json' is JSON encoding:
-      #   {"x":1,"y":"xyz","message":"Hello, world!"}
-      # 
-      # 'kvp' is "key=value" pairs, which is automatically detected as fields by Splunk:
-      #   x="1" y="xyz" message="Hello, world!"
-      # 
-      # 'text' outputs the value of "message" as is, with "key=value" pairs for others:
-      #   [x="1" y="xyz"] Hello, world!
-      format json
-
-      #
       # Buffering Parameters
       #
 
@@ -180,32 +145,23 @@ Put the following lines to your fluent.conf:
     # fluent logs in text format
     <match fluent.*>
       type splunk-http-eventcollector
-      protocol rest
       server splunk.example.com:8089
-      auth admin:pass
       sourcetype fluentd
-      format text
     </match>
 
     # log files in text format without timestamp
     <match *.log>
       type splunk-http-eventcollector
-      protocol rest
       server splunk.example.com:8089
-      auth admin:pass
       sourcetype log
       time_format none
-      format text
     </match>
 
     # application logs in kvp format
     <match app.**>
       type splunk-http-eventcollector
-      protocol rest
       server splunk.example.com:8089
-      auth admin:pass
       sourcetype app
-      format kvp
     </match>
 
 ## Contributing
